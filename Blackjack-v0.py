@@ -10,6 +10,7 @@ import torch
 from time import sleep
 from DQL import DQL_Agent
 
+# Source: https://stackoverflow.com/questions/14313510/how-to-calculate-moving-average-using-numpy
 def moving_average(a, n=10) :
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
@@ -68,7 +69,7 @@ for step in range(1, steps + 1):
         plt.xlabel("Step")
         plt.ylabel("Average Loss")
         plt.subplot(122)
-        plt.plot(moving_average(episode_rewards,n=600))
+        plt.plot(moving_average(episode_rewards, n=600))
         plt.xlabel("Episode")
         plt.ylabel("Average Reward")
         plt.pause(0.1)

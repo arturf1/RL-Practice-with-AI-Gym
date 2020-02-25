@@ -1,3 +1,8 @@
+## Authors: Artur Filipowicz
+## Version: 0.9
+## Copyright: 2020
+## MIT License
+
 import numpy as np
 import copy
 import torch
@@ -78,7 +83,7 @@ class DQL_Agent(nn.Module):
         if random.random() < eps and explore == True:
             action = random.randrange(action_space)
         else:
-            state = Variable(torch.FloatTensor(state))
+            state = Variable(torch.FloatTensor([state]))
             Q = self.net(state)
             action = Q.argmax()
         return action
