@@ -31,7 +31,7 @@ The reward for winning is +1, drawing is 0, and losing is -1.
 """
 agent = DQL_Agent(3, 2)
 agent.epsDecay = 1000
-agent.gamma = 0.2
+agent.gamma = 0.2 # small memory since each game last one 1 or 2 rounds
 agent.batch_size = 64
 agent.optimizer = torch.optim.Adam(agent.parameters())
 agent.updateRefNetFreq = 1

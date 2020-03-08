@@ -7,7 +7,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from time import sleep
+import torch.nn as nn
 from DQL import DQL_Agent
 
 # Source: https://stackoverflow.com/questions/14313510/how-to-calculate-moving-average-using-numpy
@@ -18,24 +18,41 @@ def moving_average(a, n=10) :
 
 # Environment information:
 # https://github.com/openai/gym/wiki/MountainCar-v0
-env = gym.make('MountainCar-v0')
+env = gym.make('CartPole-v0')
 
 """
-The observation is a 2-tuple of: 
-position between -1.2 and 0.6 
-velocity between -0.07 and 0.07
+The observation is a 4-tuple of: 
+position between -2.4 and 2.4 
+velocity between -inf and inf
+pole angle between -41.8 and 41.8
+pole velocity at tip between -inf and inf
 
-The actions are push left (0), no push (1), and push right (2).
+The actions are push left (0), and push right (1).
 
-The reward is -1 for each time step until the goal position of 0.5 is reached.
+The reward is 1 for each time step until:
+1) pole angle is more than ±12°
+2) cart position is more than ±2.4
+3) episode length is greater than 200
 
-Car starts at random position from -0.6 to -0.4 with no velocity, and has 
-200 iterations to reach the goal position.      
+Cart starts with all observations assigned a uniform 
+random value between ±0.05.      
 """
-agent = DQL_Agent(2, 3)
-agent.epsDecay = 1000
-agent.gamma = 0.99
+agent = DQL_Agent(4, 2)
+agent.epsDecay = 1500
+agent.gamma = 0.999
 agent.batch_size = 64
+net = nn.Sequential(
+            nn.Linear(4, 30),
+            nn.ReLU(),
+            nn.Linear(30, 30),
+            nn.ReLU(),
+            nn.Linear(30, 30),
+            nn.ReLU(),
+            nn.Linear(30, 30),
+            nn.ReLU(),
+            nn.Linear(30, 2),
+        )
+agent.changeNet(net)
 agent.optimizer = torch.optim.Adam(agent.parameters())
 agent.updateRefNetFreq = 1
 
@@ -50,7 +67,6 @@ for step in range(1, steps + 1):
     agent.lifetime += 1
     action = agent.act(state, True, env.action_space.n)
     next_state, reward, done, _ = env.step(int(action))
-    reward = 100*(state[0] > -0.8)*(state[0]+0.8)+100*(reward==1)
     agent.memorize(state, action, reward, next_state, done)
 
     state = next_state
@@ -69,11 +85,11 @@ for step in range(1, steps + 1):
     if step % 50 == 0:
         plt.clf()
         plt.subplot(121)
-        plt.plot(moving_average(losses,n=300))
+        plt.plot(moving_average(losses,n=20))
         plt.xlabel("Step")
         plt.ylabel("Average Loss")
         plt.subplot(122)
-        plt.plot(moving_average(episode_rewards, n=600))
+        plt.plot(moving_average(episode_rewards, n=20))
         plt.xlabel("Episode")
         plt.ylabel("Average Reward")
         plt.pause(0.1)

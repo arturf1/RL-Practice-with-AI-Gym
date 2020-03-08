@@ -7,7 +7,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from time import sleep
+import torch.nn as nn
 from DQL import DQL_Agent
 
 # Source: https://stackoverflow.com/questions/14313510/how-to-calculate-moving-average-using-numpy
@@ -33,13 +33,23 @@ Car starts at random position from -0.6 to -0.4 with no velocity, and has
 200 iterations to reach the goal position.      
 """
 agent = DQL_Agent(2, 3)
-agent.epsDecay = 1000
+agent.epsDecay = 20000
 agent.gamma = 0.99
-agent.batch_size = 64
+agent.batch_size = 32
+net = nn.Sequential(
+            nn.Linear(2, 32),
+            nn.ReLU(),
+            nn.Linear(32, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3),
+        )
+agent.changeNet(net)
 agent.optimizer = torch.optim.Adam(agent.parameters())
-agent.updateRefNetFreq = 1
+agent.updateRefNetFreq = 200
 
-steps = 5000
+steps = 200000
 losses = []
 episode_reward = 0
 episode_rewards = []
@@ -50,7 +60,6 @@ for step in range(1, steps + 1):
     agent.lifetime += 1
     action = agent.act(state, True, env.action_space.n)
     next_state, reward, done, _ = env.step(int(action))
-    reward = 100*(state[0] > -0.8)*(state[0]+0.8)+100*(reward==1)
     agent.memorize(state, action, reward, next_state, done)
 
     state = next_state
@@ -66,20 +75,20 @@ for step in range(1, steps + 1):
         losses.append(loss.data.numpy())
 
     # Show training process
-    if step % 50 == 0:
+    if step % 100 == 0:
         plt.clf()
         plt.subplot(121)
-        plt.plot(moving_average(losses,n=300))
+        plt.plot(moving_average(losses,n=1500))
         plt.xlabel("Step")
         plt.ylabel("Average Loss")
         plt.subplot(122)
-        plt.plot(moving_average(episode_rewards, n=600))
+        plt.plot(episode_rewards)
         plt.xlabel("Episode")
         plt.ylabel("Average Reward")
         plt.pause(0.1)
 
     # Run one episode to show agent progress
-    if step % 500 == 0:
+    if step % 10000 == 0:
         state = env.reset()
         for t in range(200):
             env.render()

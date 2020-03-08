@@ -65,6 +65,7 @@ class DQL_Agent(nn.Module):
 
         Q_t1 = self.ref(next_state) # raw Q values from reference network
         Q_max_t1 = Q_t1.max(1)[0] # max Q value of next state
+
         loss = (Q_A_t - (reward + self.gamma*Q_max_t1*(1-done))).pow(2).mean()
 
         self.optimizer.zero_grad()
